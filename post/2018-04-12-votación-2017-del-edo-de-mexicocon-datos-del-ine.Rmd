@@ -1,0 +1,194 @@
+---
+title: Votación 2017 del Edo. de Mexico con datos del INE
+author: Rodrigo Pacheco
+date: '2018-04-12'
+slug: votación-2017-del-edo-de-mexicocon-datos-del-ine
+categories:
+  - ine
+  - mexico
+tags:
+  - r
+  - leaflet
+thumbnail: "img/edomx.jpg"
+description: ''
+featured: ''
+featuredalt: ''
+featuredpath: ''
+linktitle: ''
+---
+```{r , echo=F,results='hide',message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+options(knitr.table.format = "html")
+```
+
+<p> En junio de 2017 se realizaron las elecciones en distintos estados de México y podemos aprovechar los datos que brinda la página del  [**IEEM**](http://www.prepieem.org.mx/rptDistrital.html) para observar cómo fue la votación general y de cada distrito, de forma espacial. Para ello, usamos la última versión del conteo de votos que se emitió. </p>
+
+#Conocer y limpiar
+<p>Cargamos algunos paquetes, cargamos los datos y podemos observar que el formato tiene un arreglo que no nos favorece para su análisis. Hay muchas combinaciones de alianzas y sería mejor tener solo al partido que mejor represente a los candidatos. También hay una columna que muestra si el conteo tiene observaciones y hay algunos votos con anotaciones de “Ilegibles” y “Sin dato”. Esta columna nos ayuda a eliminar algunas observaciones.</p>
+
+```{r , echo=T,message=FALSE, warning=FALSE}
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(rgdal)
+library(leaflet)
+
+prep = read_csv('https://raw.githubusercontent.com/Rodpach/data/master/EdoMex/MEX_GOB_2017.csv') %>% select(-estado)
+```
+
+```{r , echo=F,message=FALSE, warning=FALSE}
+kable(head(prep,20), caption = "Generalidad del formato de datos de la elección") %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+                 font_size = 8,full_width = F,position = "center")%>%
+  scroll_box(width = "700px", height = "400px")
+```
+
+<p>Cambiamos la estructura de los datos y ahora tenemos una columna que conglomera a los partidos y modificamos algunos de sus nombres. En este caso el PRI es el que mejor representa la alianza que abandera a del Mazo. Por ello, para fines del análisis, todos estos partidos serán considerados como PRI. Nos quedamos con los votos que no tienen observaciones o anotación en su celda que muestra el número de votos. Por último, utilizamos el número total de votos de cada conteo para saber su contribución al porcentaje de la elección y obtener una tabla como esta:<p/>
+
+```{r , echo=F,message=FALSE, warning=FALSE}
+prep = prep %>% gather(partido, votos, pan:nulos)
+
+all_pri = c("pvem","pes","na","c_pvem_na_pes","c_pvem_na","c_pvem_pes","c_na_pes")
+
+prep$partido = ifelse(str_detect(prep$partido,'pri') == T | prep$partido == "pvem"|
+                        prep$partido =='pes'|prep$partido =='na'| prep$partido == "c_pvem_na_pes"|
+                        prep$partido =="c_pvem_na"|prep$partido =="c_pvem_pes"|prep$partido =="c_na_pes",
+                       'pri', 
+                       prep$partido)
+
+prep$observaciones = if_else(is.na(prep$observaciones) == T, 1, 0)
+prep = prep %>% filter(observaciones == 1)
+nocontabilizadas = prep %>% filter(observaciones == 0)
+
+
+contab_error = prep %>% filter(votos %in% c('ILEGIBLE', 'SIN DATO'), contabilizada == 1)
+contab_error_votos = aggregate(total_votos ~ seccion + id_casilla + tipo_casilla, contab_error, sum)
+
+
+prep = filter(prep,votos != 'ILEGIBLE')
+prep = filter(prep,votos != 'SIN DATO')
+prep$votos = as.numeric(prep$votos)
+
+prep = mutate(prep,
+  perc = (votos*100)/sum(votos),
+  fecha_hora_registro = dmy_hm(prep$fecha_hora_registro)
+)
+```
+<p> </p>
+```{r , echo=F,message=FALSE, warning=FALSE}
+kable(head(prep,20), caption = "Nuevo formato de datos de la elección 2017 en el Estado de México") %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+                 font_size = 8,full_width = F,position = "center")%>%
+  scroll_box(width = "700px", height = "400px")
+```
+
+#Análisis de datos
+<p>Con este nuevo formato podemos sumar los votos o porcentajes por partido y distrito, de forma generalizada, con la función `r 'aggregate'``. Estas sumas las alojamos en objetos distintos para graficar los conteos. Con la hora también graficamos como fue el conteo de votos acumulado del PREP a lo largo del día.</p>
+```{r , echo=T, results='hide',message=FALSE, warning=FALSE}
+votos_p_dl = aggregate(votos ~ partido + distrito_local, prep, sum)
+
+perc_p_dl = aggregate(perc ~ partido + distrito_local, prep, sum)
+
+votos_p = aggregate(votos ~ partido, prep, sum)
+
+perc_p = aggregate(perc ~ partido, prep, sum)
+```
+
+```{r , echo=FALSE, results='hide',message=FALSE,warning=FALSE, fig.align='center'}
+ggplot(votos_p_dl,aes(x = reorder(distrito_local, - votos),votos)) + geom_bar(aes(fill = partido), position = 'dodge',stat = 'identity') + 
+  geom_text(aes(label = votos), position = 'dodge', stat = 'identity', vjust = 0, size = 2) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 3)) +
+  labs(x = 'Distritos locales', y = 'Número de votos', title= 'Elecciones Edo. Mex. 2017 - Votos por Distrito') + 
+  scale_fill_manual(values = c('cand_ind_1' = '#990099', 'morena' = '#993333', 
+                               'no_registrados' = '#CCCCCC','nulos' = '#000000',
+                               'pan' = '#003366','prd' = '#FFFF00',
+                               'pri' = '#339900', 'pt' = '#FF0033'))
+
+ggplot(perc_p_dl,aes(x = reorder(distrito_local, - perc),perc)) + geom_bar(aes(fill = partido), position = 'dodge',stat = 'identity') + 
+  geom_text(aes(label = perc), position = 'dodge', stat = 'identity', vjust = 0, size = 2) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 3)) +
+  labs(x = 'Distritos locales', y = 'Porcentaje de votos', title= 'Elecciones Edo. Mex. 2017 - Porcentaje de votos por Distrito') + 
+  scale_fill_manual(values = c('cand_ind_1' = '#990099', 'morena' = '#993333', 
+                               'no_registrados' = '#CCCCCC','nulos' = '#000000',
+                               'pan' = '#003366','prd' = '#FFFF00',
+                               'pri' = '#339900', 'pt' = '#FF0033'))
+
+ggplot(perc_p,aes(reorder(partido,-perc),perc)) + geom_bar(aes(fill = partido),stat = 'identity') + 
+  geom_text(aes(label = round(perc, digits = 2)), stat = 'identity', vjust = 0, size = 2) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  labs(x = 'Partido', y = 'Porcentaje de votos', title= 'Elecciones Edo. Mex. 2017 - Porcentaje de votos por partido') + 
+  scale_fill_manual(values = c('cand_ind_1' = '#990099', 'morena' = '#993333', 
+                               'no_registrados' = '#CCCCCC','nulos' = '#000000',
+                               'pan' = '#003366','prd' = '#FFFF00',
+                               'pri' = '#339900', 'pt' = '#FF0033'))
+
+ggplot(votos_p,aes(reorder(partido,-votos),votos)) + geom_bar(aes(fill = partido),stat = 'identity') + 
+  geom_text(aes(label = votos), stat = 'identity', vjust = 0, size = 3) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  labs(x = 'Partido', y = 'Número de votos', title= 'Elecciones Edo. Mex. 2017 - Número de votos por partido') + 
+  scale_fill_manual(values = c('cand_ind_1' = '#990099', 'morena' = '#993333', 
+                               'no_registrados' = '#CCCCCC','nulos' = '#000000',
+                               'pan' = '#003366','prd' = '#FFFF00',
+                               'pri' = '#339900', 'pt' = '#FF0033'))
+
+hora_votos = aggregate(votos ~ fecha_hora_registro + partido, prep, sum)
+
+hora_votos$acum = ave(hora_votos$votos, hora_votos$partido, FUN = cumsum)
+
+ggplot(hora_votos, aes(fecha_hora_registro, acum)) + 
+  geom_line(aes(color = partido)) + 
+  labs(x = 'Tiempo', y = 'Número de votos', title= 'Elecciones Edo. Mex. 2017 - Linea de tiempo de conteo de votos') + 
+  scale_x_datetime(breaks = seq(min(hora_votos$fecha_hora_registro), max(hora_votos$fecha_hora_registro), by = 4500)) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_color_manual(values = c('cand_ind_1' = '#990099', 'morena' = '#993333', 
+                               'no_registrados' = '#CCCCCC','nulos' = '#000000',
+                               'pan' = '#003366','prd' = '#FFFF00',
+                               'pri' = '#339900', 'pt' = '#FF0033'))
+```
+
+<p>Las imágenes se pueden obtener ampliadas y en formato PDF a través de este  [**enlace**](https://drive.google.com/drive/folders/0B9wzzBD1RUDFMDJqOC1tbWV3bFE).</p>
+<p>Combinar los distritos locales y sus votaciones para cada partido quizá no es la mejor idea. La gráfica requiere mucha área para ser legible y todo se ve amontonado. Otra forma de mostrarlos puede ser a través de mapas espaciales y colorear los distritos con base en el ganador.</p>
+<p>El [**INE ofrece polígonos**](http://cartografia.ife.org.mx/sige7/?distritacion=local,) de los distritos electorales. Esta información puede aprovecharse para dar una vista general de los resultados por distrito como queremos:</p>
+
+```{r ,comment=FALSE, echo=FALSE, message=FALSE,warning=FALSE}
+  edomap = readOGR(dsn = '../../static/data/EdoM/shp', layer = 'edomap', verbose=FALSE)
+  
+  edomap = SpatialPolygonsDataFrame(edomap, as.data.frame(edomap))
+  
+  colnames(edomap@data) = c("gid","id","entidad","distrito_l","tipo","control",
+                            "geometry1_","distrito_local","maxvotos","totvotos",
+                            "ganador","cand_ind_1","morena","no_registrados","nulos",
+                            "pan","prd","pri","pt")
+  
+  leaflet(edomap) %>%
+      addProviderTiles(providers$OpenStreetMap.BlackAndWhite) %>%
+      addPolygons(layerId = ~distrito_local, popup = ~distrito_local,
+        color = ~(ifelse(edomap@data$ganador == 'cand_ind_1', '#990099', 
+                         ifelse(edomap@data$ganador ==  'morena', '#993333',
+                                ifelse(edomap@data$ganador ==  'no_registrados', '#CCCCCC',
+                                       ifelse(edomap@data$ganador ==  'pan', '#003366',
+                                              ifelse(edomap@data$ganador ==  'prd', '#FFFF00',
+                                                     ifelse(edomap@data$ganador == 'pri', '#339900',
+                                                            ifelse(edomap@data$ganador == 'pt', '#FF0033','black'
+                                                            )))))))),
+        weight = 3,
+        fillColor = ~(ifelse(edomap@data$ganador == 'cand_ind_1', '#990099', 
+                             ifelse(edomap@data$ganador ==  'morena', '#993333',
+                                    ifelse(edomap@data$ganador ==  'no_registrados', '#CCCCCC',
+                                           ifelse(edomap@data$ganador ==  'pan', '#003366',
+                                                  ifelse(edomap@data$ganador ==  'prd', '#FFFF00',
+                                                         ifelse(edomap@data$ganador == 'pri', '#339900',
+                                                                ifelse(edomap@data$ganador == 'pt', '#FF0033','black'
+                                                                )))))))))
+```                        
+
+#Integración en Shiny
+<p>Por último, para integrar el mapa y los resultados gráficos de la votación por distrito, creé una ``r "Shiny app"``, que puedes usar a través de este [**enlace**](https://datapach.shinyapps.io/EdoMex/)</p>
+
+![](/img/edomex_app.jpg)

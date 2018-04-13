@@ -1,0 +1,75 @@
+---
+title: 'Pedaleando: Rutas dinámicas de ecobici durante un mes en CDMX'
+author: Rodrigo Pacheco
+date: '2018-04-13'
+slug: pedaleando-rutas-dinámicas-de-ecobici-durante-un-mes-en-cdmx
+categories:
+  - Ecobici
+  - CDMX
+  - Shiny
+  - Leaflet
+tags:
+  - Ecobici
+  - CDMX
+  - Bicicleta
+  - R
+  - Shiny
+  - Leaflet
+  - Gif
+description: ''
+thumbnail: 'img/ecobici.jpg'
+---
+
+```{r , echo=F,results='hide',message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+options(knitr.table.format = "html")
+dat_md = read_csv('https://raw.githubusercontent.com/Rodpach/data/master/Ecobici/2017-06.csv')
+est_md = read.csv('https://raw.githubusercontent.com/Rodpach/data/master/Ecobici/estaciones.csv')
+```
+
+<p>Transportarse por las vialidades de la Ciudad de México a veces parece ser una pesadilla, pues existe un uso desmedido del auto y la desorganización general en la movilización pareciera que está llegando a su límite: desde el metro, hasta las vialidades para camiones y autos privados. En ciudades con problemas similares, cada vez es más evidente que promocionar la bicicleta es el rumbo que está funcionando y tomando el S. XXI. Además, algunas ciudades cuentan con servicios públicos de bicicleta que producen datos públicos, y su análisis pueden ayudarnos a entender, mejorar y expandir el servicio, al permitirnos conocer las vialidades y áreas de la ciudad, así como los tiempos y la demografía que hace uso de este servicio.</p>
+<p>Un esfuerzo en la Ciudad de México de fomentar el uso de la bicicleta, y contar con un buen registro de su uso, es el programa de Ecobici. Este programa inicio desde 2010 y su uso a ha ido incrementado a la par de su expansión, con menos de 10,000 usuarios por día en su primer año, hasta alcanzar más de 30,000 usuarios al día, desde el 2015 y hasta el día de hoy, con 452 estaciones y cubriendo 32 km2. El programa de Ecobici cuenta con un acervo de datos abiertos que es accesible a través de su [portal oficial](https://www.ecobici.cdmx.gob.mx/es) y a través de su API para datos en vivo.</p>
+<p>Como ciclista y analista de datos, entender cómo se usa la bicicleta en la ciudad de México resulta un reto complejo y fascinante. Además, la facilidad con la que se puede tener acceso a los datos es algo que hay que reconocerle a Ecobici y el [Laboratorio de la Ciudad de México](http://labcd.mx/labforthecity/). No obstante, también es una gran oportunidad para fomentar un mayor uso de la bicicleta y compartir mi visión en cómo podríamos mejorar el servicio, a través de herramientas que faciliten la extracción de información de los datos y que, tanto gobierno como sociedad, tomen decisiones informadas con base en evidencia de datos.</p>
+
+
+#Los datos de bicis
+
+<p>Para comenzar la aventura por entender las rutas, la demografía y los horarios de los usuarios de Ecobici en la Ciudad de México, primero tenía que ver con que datos contaba. Como anteriormente mencioné, en su portal me encontré que Ecobici puede darte datos en vivo, por medio de su API, y por cada mes, por descarga en su [portal oficial](https://www.ecobici.cdmx.gob.mx/es/informacion-del-servicio/open-data). Me fui con la segunda opción y por solo un mes: junio de 2017. La razón, por ahora, es el poder trabajar con una buena muestra representativa y que el código se pueda extrapolar. También hay algo de poderlos trabajar en mi laptop y no requerir de mucho hardware.</p>
+<p>El archivo cuenta con buenos detalles:</p>
+
+```{r , echo=F,message=FALSE, warning=FALSE}
+kable(head(dat_md,20), caption = "Datos de viajes de ecobici en junio de 2017") %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+                 font_size = 8,full_width = F,position = "center")%>%
+  scroll_box(width = "700px", height = "400px")
+```
+<p> </p>
+
+<p>De izquierda a derecha, vemos que sus datos proporcionan el género (Femenino o masculino), la edad, el número de bici, donde la toman, que día y a que hora la toman, donde la dejan y, que día y a que hora la dejan. En total, ocho variables que acumulan 853,651 viajes que se hicieron en junio.</p>
+<p>Los datos que proporcionan son un excelente inicio, pero no tiene las coordenadas de las estaciones. Mi idea es que, usando el servicio de ruta de Google, pueda obtener la ruta más probable de estación a estación, junto con la distancia y el tiempo promedio de llegada, y seleccionando mi modo de transporte como bicicleta, como cuando uno lo solicita en el celular o en su página. De esta forma se podrían explorar las rutas de forma dinámica en un mapa de la ciudad. Por ello, para buena de estos datos, la API cuenta con una base de datos de las estaciones, sus coordenadas, sus nombres y cuales están cerca, entre otras cosas:</p>
+
+```{r , echo=F,message=FALSE, warning=FALSE}
+kable(head(est_md,20), caption = "Información de estaciones de ecobici CDMX") %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+                 font_size = 8,full_width = F,position = "center")%>%
+  scroll_box(width = "700px", height = "400px")
+```
+<p> </p>
+#¿A dónde van los ciclistas?
+
+<p>Con base en esta base de datos puedo relacionar las estaciones de retiro (donde toman las bicis) con sus respectivas coordenadas y se puede hacer los mismo para las estaciones de llegada (Donde dejan las bicis). Con esta relación me percaté que existían retiros y llegadas en la misma estación. Solo me interesa el movimiento entre estaciones, por lo que procedí a eliminar los usos sin cambio de estación. En el resto de las rutas, muchas contaban con solo uno o dos viajes, por lo que decidí usar las rutas más concurridas y que acumularan el 90% de los viajes. De esta forma me quedé con 49,189 rutas distintas entre 452 estaciones… **¡49,189 rutas distintas!** </p>
+<p>El servicio gratuito de Google para calcular las rutas solo te permite realizar 2,000 solicitudes por día y, si quiero todas, ¡requeriría de más de 24 días para lograrlo! Pero por ahora me conformé con las rutas más concurridas y que acumulaban el 64.41% de los datos, que equivalen a **535,523 viajes**. También podría equivaler a mi paciencia de solicitar 2,000 rutas por día.</p>
+<p>Los datos que obtuve de las rutas y de ecobici se pueden relacionar y, para mi agrado, analizar cómo esperaba. Así, un ejemplo de lo que se puede hacer conociendo el lugar y la hora de donde retiran y dejan una bicicleta, la distancia, además de la demografía de los usuarios, podemos conocer que rutas y vialidades son las más concurridas, y la velocidad de los usuarios por edad, género y a distintas horas del día:</p>
+
+![](/img/uso_eco_2fps.gif)
+
+
+<p> </p>
+<p>El GIF muestra una sumatoria de todo el mes a distintas horas. Se puede ver que las velocidades por las mañanas son mejores y decrecen a eso de las 11:00 am, con pocos usuarios durante la noche. También hay más variabilidad en las velocidades entre los 20 y los 40 años, que es el intervalo que más usuarios tiene, y parece que los más veloces rondan los 30’s. Es muy notorio que la mayoría de los que usan el servicio son del género masculino, que son los azules. También, las rutas probables más usadas se pueden ver que cruzan av. Reforma y las calles de la Condesa.</p>
+<p>La resolución que se puede alcanzar puede ser de un día a cierta hora, o un intervalo de días a un intervalo de horas específico, y seleccionando un intervalo de edades. Por ello, para que cualquiera pueda explorar la dinámica del servicio de Ecobici durante el mes de junio, implementé una aplicación ``r "Shiny"`` que permite interactuar con ellos y que puedes acceder en [**esta liga**](https://datapach.shinyapps.io/rutas_ecobici_jun2017/) </p>
+
+![](/img/ecobici_app.jpg)
+<p> </p>
+<p>Usando los datos que generan las ciudades, de la de mano de análisis y herramientas como estas, se podría generar una sociedad mucho más informada para la toma de decisiones, tanto a nivel gubernamental como en la sociedad civil. Además, este análisis se puede expandir para mejorar la eficiencia del servicio o focalizar el mantenimiento de las bicicletas, además de conocer factores que promuevan la adaptación de la bicicleta como eje de transporte de una ciudad.</p>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mexico on DataPach</title>
+    <link>/categories/mexico/</link>
+    <description>Recent content in Mexico on DataPach</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 12 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/categories/mexico/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Votación 2017 del Edo. de Mexico con datos del INE</title>
+      <link>/post/votaci%C3%B3n-2017-del-edo-de-mexicocon-datos-del-ine/</link>
+      <pubDate>Thu, 12 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/votaci%C3%B3n-2017-del-edo-de-mexicocon-datos-del-ine/</guid>
+      <description>En junio de 2017 se realizaron las elecciones en distintos estados de México y podemos aprovechar los datos que brinda la página del IEEM para observar cómo fue la votación general y de cada distrito, de forma espacial. Para ello, usamos la última versión del conteo de votos que se emitió.Conocer y limpiarCargamos algunos paquetes, cargamos los datos y podemos observar que el formato tiene un arreglo que no nos favorece para su análisis.</description>
+    </item>
+    
+  </channel>
+</rss>

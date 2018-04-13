@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ecobici on DataPach</title>
+    <link>/tags/ecobici/</link>
+    <description>Recent content in Ecobici on DataPach</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 13 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/ecobici/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Pedaleando: Rutas dinámicas de ecobici durante un mes en CDMX</title>
+      <link>/post/pedaleando-rutas-din%C3%A1micas-de-ecobici-durante-un-mes-en-cdmx/</link>
+      <pubDate>Fri, 13 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/pedaleando-rutas-din%C3%A1micas-de-ecobici-durante-un-mes-en-cdmx/</guid>
+      <description>Transportarse por las vialidades de la Ciudad de México a veces parece ser una pesadilla, pues existe un uso desmedido del auto y la desorganización general en la movilización pareciera que está llegando a su límite: desde el metro, hasta las vialidades para camiones y autos privados. En ciudades con problemas similares, cada vez es más evidente que promocionar la bicicleta es el rumbo que está funcionando y tomando el S.</description>
+    </item>
+    
+  </channel>
+</rss>

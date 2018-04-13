@@ -1,0 +1,27 @@
+---
+title: "About DataPach"
+author: "Rodrigo Pacheco"
+date: "11 de abril de 2018"
+output: html_document
+---
+
+##Rodrigo Pacheco
+
+<img style="float: left" width="35%" height="35%" src=/img/rodpach.jpg>
+
+
+
+<p>**Actualmente** realizo mis estudios de posgrado en ecología, en el [Laboratorio de Ecología Funcional](http://www.iies.unam.mx/laboratorios/ecologia-funcional/), del Instituto de Investigaciones en Ecosistemas y Sustentabilidad, UNAM. Mi investigación se enfoca en entender las relaciones que emergen entre las ciudades y la biodiversidad, desde la perspectiva de la _Ecología Urbana_. Mi interés parte de ayudar a la creación y adopción de _Ciudades _Biofílicas_.</p>
+
+<p>**Realicé** mis estudios de licenciatura en Biología en la Facultad de Ciencias, UNAM y realicé mi tesis en el laboratorio de Restauración Ecológica, del Instituto de Biología, UNAM, en donde también laboré. Durante este periodo realicé estudios de ecología y conservación en el Lago de Pátzcuaro, Xochimilco y Sian Ka’an, estudiando la ecología de ambientas acuáticos. Posteriormente coordiné un proyecto que investigaba áreas propensas a infiltrar agua y/o inundarse, en tres cuencas latinoamericanas.</p>
+
+<p>Soy co-fundador de _Historias Ciencacionales A.C._ para la comunicación de la ciencia y actualmente hablo de ciencia en nuestro podcast mensual, en donde platicamos de los avances recientes de diversas ramas de la ciencia. Con Historias Cienciacionales A.C. colaboramos por dos años con el Instituto Mexicano de la Radio en un programa que abordaba diversos temas científicos.</p>
+
+<p>**Mi pasión** por la ciencia está acompañada por mi gusto a la estadística, la programación y la ciencia de datos, que exploro a través del lenguaje R.  Estos gustos procuro que se complementen y suelo abordar distintos temas, a parte de los biológicos.  Me gusta entender datos de otras áreas y responder problemas que me parecen interesantes y, en el proceso, desarrollar o adaptar herramientas que permitan entender mejor a los ecosistemas: tanto para la ciencia como al público en general.</p>
+
+
+**¡Gracias por visitar!**
+
+##CONTACTO
+<p>**rodpachecom@gmail.com**</p>
+**rodpacheco@iies.unam.mx**
